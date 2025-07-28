@@ -1,13 +1,9 @@
-#
-# For more samples, visit https://github.com/vaiorabbit/ruby-opengl/tree/master/sample .
-#
-# Ref.: /glfw-3.0.1/examples/simple.c
-#
+# frozen_string_literal: true
+
 require 'opengl'
 require 'glfw'
 
-# Press ESC to exit.
-key_callback = GLFW::create_callback(:GLFWkeyfun) do |window, key, scancode, action, mods|
+key_callback = GLFW.create_callback(:GLFWkeyfun) do |window, key, _scancode, action, _mods|
   GLFW.SetWindowShouldClose(window, 1) if key == GLFW::KEY_ESCAPE && action == GLFW::PRESS
 end
 
@@ -15,11 +11,11 @@ if __FILE__ == $PROGRAM_NAME
   GLFW.load_lib('/opt/homebrew/lib/libglfw.dylib')
   GLFW.Init()
 
-  window = GLFW.CreateWindow(640, 480, "Simple example", nil, nil)
+  window = GLFW.CreateWindow(640, 480, 'Simple example', nil, nil)
   GLFW.MakeContextCurrent(window)
   GLFW.SetKeyCallback(window, key_callback)
 
-  GL.load_lib() # Call GL.load_lib after OpenGL context is available
+  GL.load_lib
 
   width_buf = ' ' * 8
   height_buf = ' ' * 8
@@ -27,7 +23,7 @@ if __FILE__ == $PROGRAM_NAME
     GLFW.GetFramebufferSize(window, width_buf, height_buf)
     width = width_buf.unpack1('L')
     height = height_buf.unpack1('L')
-    ratio = width.to_f / height.to_f
+    ratio = width.to_f / height
 
     GL.Viewport(0, 0, width, height)
     GL.Clear(GL::COLOR_BUFFER_BIT)
