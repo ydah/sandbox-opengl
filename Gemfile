@@ -3,3 +3,4 @@
 source 'https://rubygems.org'
 
 gem 'opengl-bindings2'
+gem "matrix"
