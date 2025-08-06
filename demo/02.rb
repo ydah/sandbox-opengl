@@ -3,9 +3,29 @@
 require 'opengl'
 require 'glfw'
 
-# Exit with ESC key
+$rotation_direction = 0  # -1: left, 0: none, 1: right
+$rotation_speed = 0.5
+$floor_color_scheme = 0  # 0: red-green, 1: red-white, 2: green-brown, 3: purple-cyan
+
+# Exit with ESC key and control rotation with arrow keys
 key_callback = GLFW.create_callback(:GLFWkeyfun) do |window, key, _scancode, action, _mods|
-  GLFW.SetWindowShouldClose(window, 1) if key == GLFW::KEY_ESCAPE && action == GLFW::PRESS
+  if key == GLFW::KEY_ESCAPE && action == GLFW::PRESS
+    GLFW.SetWindowShouldClose(window, 1)
+  elsif key == GLFW::KEY_RIGHT
+    # right key: rotate right
+    $rotation_direction = 1 if action == GLFW::PRESS || action == GLFW::REPEAT
+    $rotation_direction = 0 if action == GLFW::RELEASE
+  elsif key == GLFW::KEY_LEFT
+    # left key: rotate left
+    $rotation_direction = -1 if action == GLFW::PRESS || action == GLFW::REPEAT
+    $rotation_direction = 0 if action == GLFW::RELEASE
+  elsif key == GLFW::KEY_UP && action == GLFW::PRESS
+    # Up key: next color pattern
+    $floor_color_scheme = ($floor_color_scheme + 1) % 4
+  elsif key == GLFW::KEY_DOWN && action == GLFW::PRESS
+    # Down key: previous color pattern
+    $floor_color_scheme = ($floor_color_scheme - 1) % 4
+  end
 end
 
 # Calculate normal vector
@@ -234,6 +254,63 @@ def draw_ground
   grid_size = 2.0
   grid_count = 20
 
+  color_patterns = [
+    # pattern 0: red and green
+    {
+      color1: {
+        ambient: [0.0, 0.0, 0.05, 1.0],
+        diffuse: [0.0, 0.0, 0.3, 1.0],
+        specular: [0.1, 0.1, 0.3, 1.0]
+      },
+      color2: {
+        ambient: [0.2, 0.18, 0.0, 1.0],
+        diffuse: [0.8, 0.7, 0.0, 1.0],
+        specular: [0.9, 0.8, 0.1, 1.0]
+      }
+    },
+    # pattern 1: red and white
+    {
+      color1: {
+        ambient: [0.2, 0.0, 0.0, 1.0],
+        diffuse: [0.7, 0.0, 0.0, 1.0],
+        specular: [0.9, 0.2, 0.2, 1.0]
+      },
+      color2: {
+        ambient: [0.2, 0.2, 0.2, 1.0],
+        diffuse: [0.9, 0.9, 0.9, 1.0],
+        specular: [1.0, 1.0, 1.0, 1.0]
+      }
+    },
+    # pattern 2: Green and brown
+    {
+      color1: {
+        ambient: [0.0, 0.1, 0.0, 1.0],
+        diffuse: [0.0, 0.5, 0.0, 1.0],
+        specular: [0.2, 0.7, 0.2, 1.0]
+      },
+      color2: {
+        ambient: [0.15, 0.08, 0.02, 1.0],
+        diffuse: [0.4, 0.2, 0.05, 1.0],
+        specular: [0.5, 0.3, 0.1, 1.0]
+      }
+    },
+    # pattern 3: purple and cyan
+    {
+      color1: {
+        ambient: [0.15, 0.0, 0.2, 1.0],
+        diffuse: [0.5, 0.0, 0.7, 1.0],
+        specular: [0.7, 0.3, 0.9, 1.0]
+      },
+      color2: {
+        ambient: [0.0, 0.15, 0.2, 1.0],
+        diffuse: [0.0, 0.6, 0.8, 1.0],
+        specular: [0.3, 0.8, 1.0, 1.0]
+      }
+    }
+  ]
+
+  current_pattern = color_patterns[$floor_color_scheme]
+
   grid_count.times do |i|
     grid_count.times do |j|
       x = (i - (grid_count / 2)) * grid_size
@@ -241,21 +318,17 @@ def draw_ground
 
       # Checkerboard pattern determination
       if (i + j).even?
-        # Navy
-        navy_ambient = [0.0, 0.0, 0.05, 1.0].pack('F*')
-        navy_diffuse = [0.0, 0.0, 0.3, 1.0].pack('F*')
-        navy_specular = [0.1, 0.1, 0.3, 1.0].pack('F*')
-        GL.Materialfv(GL::FRONT_AND_BACK, GL::AMBIENT, navy_ambient)
-        GL.Materialfv(GL::FRONT_AND_BACK, GL::DIFFUSE, navy_diffuse)
-        GL.Materialfv(GL::FRONT_AND_BACK, GL::SPECULAR, navy_specular)
+        # Color 1
+        color = current_pattern[:color1]
+        GL.Materialfv(GL::FRONT_AND_BACK, GL::AMBIENT, color[:ambient].pack('F*'))
+        GL.Materialfv(GL::FRONT_AND_BACK, GL::DIFFUSE, color[:diffuse].pack('F*'))
+        GL.Materialfv(GL::FRONT_AND_BACK, GL::SPECULAR, color[:specular].pack('F*'))
       else
-        # Yellow
-        yellow_ambient = [0.2, 0.18, 0.0, 1.0].pack('F*')
-        yellow_diffuse = [0.8, 0.7, 0.0, 1.0].pack('F*')
-        yellow_specular = [0.9, 0.8, 0.1, 1.0].pack('F*')
-        GL.Materialfv(GL::FRONT_AND_BACK, GL::AMBIENT, yellow_ambient)
-        GL.Materialfv(GL::FRONT_AND_BACK, GL::DIFFUSE, yellow_diffuse)
-        GL.Materialfv(GL::FRONT_AND_BACK, GL::SPECULAR, yellow_specular)
+        # Color 2
+        color = current_pattern[:color2]
+        GL.Materialfv(GL::FRONT_AND_BACK, GL::AMBIENT, color[:ambient].pack('F*'))
+        GL.Materialfv(GL::FRONT_AND_BACK, GL::DIFFUSE, color[:diffuse].pack('F*'))
+        GL.Materialfv(GL::FRONT_AND_BACK, GL::SPECULAR, color[:specular].pack('F*'))
       end
 
       GL.Materialfv(GL::FRONT_AND_BACK, GL::SHININESS, [50.0].pack('F*'))
@@ -500,7 +573,8 @@ if __FILE__ == $PROGRAM_NAME
 
     GL.Disable(GL::STENCIL_TEST)
 
-    rotation += 0.5
+    # 回転方向に応じて回転角度を更新
+    rotation += $rotation_speed * $rotation_direction
     time += 0.016
 
     GLFW.SwapBuffers(window)
